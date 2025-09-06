@@ -80,6 +80,11 @@ class GeminiImagePlugin(Star):
     # 在行为面板展示为 /画图 与 /draw（AstrBot 会自动加 wake_prefix）
     @filter.command("画图", alias={"draw"})
     async def cmd_draw(self, event: AstrMessageEvent) -> MessageEventResult:
+        # 我们自己处理该事件，不再让默认 LLM 流程继续
+        try:
+            event.stop_event()
+        except Exception:
+            pass
         prompt = self._strip_command_prefix(self._extract_plain_text(event))
         if not prompt:
             yield event.chain_result([Plain("用法：画图 描述文本。可附带图片作为参考")])
@@ -89,6 +94,10 @@ class GeminiImagePlugin(Star):
 
     @filter.command("改图", alias={"edit"})
     async def cmd_edit(self, event: AstrMessageEvent) -> MessageEventResult:
+        try:
+            event.stop_event()
+        except Exception:
+            pass
         prompt = self._strip_command_prefix(self._extract_plain_text(event))
         if not prompt:
             yield event.chain_result([Plain("用法：改图 描述文本，并附带或引用图片")])
