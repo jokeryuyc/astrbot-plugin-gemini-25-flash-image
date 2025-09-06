@@ -11,7 +11,7 @@ from .utils.gemini_api import generate_image_google, schedule_delete_file
     "gemini-25-flash-image-google",
     "You",
     "使用 Google Gemini 官方 API（gemini-2.5-flash-image-preview）进行画图/改图",
-    "0.1.0",
+    "0.1.1",
 )
 class GeminiImagePlugin(Star):
     def __init__(self, context: Context, config: dict):
@@ -52,7 +52,8 @@ class GeminiImagePlugin(Star):
     def _extract_plain_text(self, event: AstrMessageEvent) -> str:
         text_parts = []
         try:
-            for comp in getattr(event.message, "chain", []) or []:
+            # 使用 AstrBot 官方 API 读取消息链
+            for comp in (event.get_messages() or []):
                 if isinstance(comp, Plain):
                     val = getattr(comp, "text", None)
                     text_parts.append(val if isinstance(val, str) else str(comp))
@@ -63,17 +64,21 @@ class GeminiImagePlugin(Star):
     def _strip_command_prefix(self, text: str) -> str:
         if not text:
             return ""
-        aliases = ["/画图", "画图", "/改图", "改图"]
+        # 支持中英文命令，允许带/或不带/
+        aliases = [
+            "画图", "改图", "draw", "edit",
+            "/画图", "/改图", "/draw", "/edit",
+        ]
         t = text.strip()
         for a in aliases:
             if t.startswith(a):
                 # 去掉命令与常见分隔符
-                rest = t[len(a):].lstrip().lstrip(":：,，?？")
+                rest = t[len(a):].lstrip().lstrip(":：,，?？ ")
                 return rest.strip()
         return t
 
-    @filter.command("/画图")
-    @filter.command("画图")
+    # 在行为面板展示为 /画图 与 /draw（AstrBot 会自动加 wake_prefix）
+    @filter.command("画图", alias={"draw"})
     async def cmd_draw(self, event: AstrMessageEvent) -> MessageEventResult:
         prompt = self._strip_command_prefix(self._extract_plain_text(event))
         if not prompt:
@@ -82,8 +87,7 @@ class GeminiImagePlugin(Star):
         async for res in self.pic_gen(event, prompt, True):
             yield res
 
-    @filter.command("/改图")
-    @filter.command("改图")
+    @filter.command("改图", alias={"edit"})
     async def cmd_edit(self, event: AstrMessageEvent) -> MessageEventResult:
         prompt = self._strip_command_prefix(self._extract_plain_text(event))
         if not prompt:
@@ -92,13 +96,8 @@ class GeminiImagePlugin(Star):
         async for res in self.pic_gen(event, prompt, True):
             yield res
 
-    @llm_tool(name="gemini-pic-gen")
     async def pic_gen(self, event: AstrMessageEvent, prompt: str, use_reference_images: bool = True):
-        """
-        使用 Gemini 官方图像模型生成/改图。
-        - prompt: 文本提示
-        - use_reference_images: 是否使用消息或引用消息中的图片作为参考
-        """
+        """内部实现：根据提示词与可选参考图生成/改图。"""
         if not self.api_keys:
             yield event.chain_result([Plain("未配置 Gemini API Key。请在插件配置中设置 api_keys")])
             return
@@ -108,7 +107,7 @@ class GeminiImagePlugin(Star):
         if use_reference_images:
             try:
                 # 当前消息中的图片
-                for comp in getattr(event.message, "chain", []) or []:
+                for comp in (event.get_messages() or []):
                     if isinstance(comp, Image):
                         try:
                             b64 = await comp.convert_to_base64()
@@ -152,3 +151,14 @@ class GeminiImagePlugin(Star):
             logger.error(f"Gemini image generation error: {e}")
             yield event.chain_result([Plain(f"图像生成失败: {str(e)}")])
 
+    @llm_tool(name="gemini-pic-gen")
+    async def tool_pic_gen(self, event: AstrMessageEvent, prompt: str = "", use_reference_images: bool = True):
+        """使用 Gemini 官方图像模型生成/改图。
+
+        Args:
+            prompt(string): 文本提示（必填）
+            use_reference_images(boolean): 是否使用消息或引用消息中的图片作为参考（默认 true）
+        """
+        prompt = prompt if isinstance(prompt, str) else str(prompt)
+        async for res in self.pic_gen(event, prompt, use_reference_images):
+            yield res
