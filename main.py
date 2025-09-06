@@ -1,7 +1,7 @@
 from astrbot.api.event import AstrMessageEvent, filter, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
-from astrbot.api.all import *  # Image, Plain, etc.
+from astrbot.api.all import *  # Image, Plain, llm_tool, etc.
 from astrbot.core.message.components import Reply
 
 from .utils.gemini_api import generate_image_google, schedule_delete_file
@@ -48,7 +48,7 @@ class GeminiImagePlugin(Star):
             logger.warning(f"callback_api_base conversion failed, fallback to file: {e}")
             return Image.fromFileSystem(image_path)
 
-    # ===== 快捷命令：/画图 与 /改图 =====
+    # ===== 快捷命令：画图/改图 =====
     def _extract_plain_text(self, event: AstrMessageEvent) -> str:
         text_parts = []
         try:
@@ -68,7 +68,7 @@ class GeminiImagePlugin(Star):
         for a in aliases:
             if t.startswith(a):
                 # 去掉命令与常见分隔符
-                rest = t[len(a):].lstrip().lstrip(":：-,，。.")
+                rest = t[len(a):].lstrip().lstrip(":：,，?？")
                 return rest.strip()
         return t
 
@@ -77,7 +77,7 @@ class GeminiImagePlugin(Star):
     async def cmd_draw(self, event: AstrMessageEvent) -> MessageEventResult:
         prompt = self._strip_command_prefix(self._extract_plain_text(event))
         if not prompt:
-            yield event.chain_result([Plain("用法：/画图 描述文本。可附带图片以进行改图。")])
+            yield event.chain_result([Plain("用法：画图 描述文本。可附带图片作为参考")])
             return
         async for res in self.pic_gen(event, prompt, True):
             yield res
@@ -87,7 +87,7 @@ class GeminiImagePlugin(Star):
     async def cmd_edit(self, event: AstrMessageEvent) -> MessageEventResult:
         prompt = self._strip_command_prefix(self._extract_plain_text(event))
         if not prompt:
-            yield event.chain_result([Plain("用法：/改图 描述文本，并附带或引用图片。")])
+            yield event.chain_result([Plain("用法：改图 描述文本，并附带或引用图片")])
             return
         async for res in self.pic_gen(event, prompt, True):
             yield res
@@ -96,12 +96,11 @@ class GeminiImagePlugin(Star):
     async def pic_gen(self, event: AstrMessageEvent, prompt: str, use_reference_images: bool = True):
         """
         使用 Gemini 官方图像模型生成/改图。
-
-        - prompt: 文本提示词
+        - prompt: 文本提示
         - use_reference_images: 是否使用消息或引用消息中的图片作为参考
         """
         if not self.api_keys:
-            yield event.chain_result([Plain("未配置 Gemini API Key。请在插件配置中设置 api_keys。")])
+            yield event.chain_result([Plain("未配置 Gemini API Key。请在插件配置中设置 api_keys")])
             return
 
         input_images_b64: list[str] = []
@@ -140,7 +139,7 @@ class GeminiImagePlugin(Star):
             )
 
             if not image_path:
-                yield event.chain_result([Plain("图像生成失败，请稍后重试或更换 API Key。")])
+                yield event.chain_result([Plain("图像生成失败，请稍后重试或更换 API Key")])
                 return
 
             comp = await self.send_image_component(image_path)
@@ -152,3 +151,4 @@ class GeminiImagePlugin(Star):
         except Exception as e:
             logger.error(f"Gemini image generation error: {e}")
             yield event.chain_result([Plain(f"图像生成失败: {str(e)}")])
+
