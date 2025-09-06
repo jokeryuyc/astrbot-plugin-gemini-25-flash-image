@@ -1,5 +1,5 @@
 name: gemini-25-flash-image-google
 desc: 使用 Gemini 官方 API 生成/改图，支持多 Key 轮询与重试
-version: v0.1.1
+version: v0.1.2
 author: jokeryuyc
 repo: https://github.com/jokeryuyc/astrbot-plugin-gemini-25-flash-image

@@ -11,7 +11,7 @@ from .utils.gemini_api import generate_image_google, schedule_delete_file
     "gemini-25-flash-image-google",
     "You",
     "使用 Google Gemini 官方 API（gemini-2.5-flash-image-preview）进行画图/改图",
-    "0.1.1",
+    "0.1.2",
 )
 class GeminiImagePlugin(Star):
     def __init__(self, context: Context, config: dict):
