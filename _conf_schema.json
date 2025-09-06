@@ -1,70 +1,51 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Gemini Official Image Plugin Config",
-  "type": "object",
-  "properties": {
-    "api_keys": {
-      "type": "array",
-      "title": "API Keys",
-      "description": "Google Generative Language API Keys（支持多个，自动轮换）",
-      "items": { "type": "string" },
-      "minItems": 1
-    },
-    "api_key": {
-      "type": "string",
-      "title": "API Key (Legacy)",
-      "description": "单个 Key，向后兼容；若已配置 api_keys 则忽略"
-    },
-    "api_base": {
-      "type": "string",
-      "title": "API Base",
-      "description": "默认 https://generativelanguage.googleapis.com",
-      "default": "https://generativelanguage.googleapis.com"
-    },
-    "api_version": {
-      "type": "string",
-      "title": "API Version",
-      "description": "默认 v1beta，可根据服务端可用性调整",
-      "default": "v1beta"
-    },
-    "model_name": {
-      "type": "string",
-      "title": "Model Name",
-      "description": "默认 gemini-2.5-flash-image-preview",
-      "default": "gemini-2.5-flash-image-preview"
-    },
-    "max_retries": {
-      "type": "integer",
-      "title": "Max Retries per Key",
-      "description": "每个密钥的最大重试次数",
-      "default": 3,
-      "minimum": 0,
-      "maximum": 10
-    },
-    "cleanup_minutes": {
-      "type": "integer",
-      "title": "Auto Cleanup Minutes",
-      "description": "定期清理历史图片（分钟）",
-      "default": 15,
-      "minimum": 1,
-      "maximum": 1440
-    },
-    "delete_after_send": {
-      "type": "boolean",
-      "title": "Delete After Send",
-      "description": "消息发送后删除本地图片文件",
-      "default": true
-    },
-    "delete_delay_seconds": {
-      "type": "integer",
-      "title": "Delete Delay Seconds",
-      "description": "删除前的延时秒数（给适配器上传留出时间）",
-      "default": 15,
-      "minimum": 0,
-      "maximum": 300
-    }
+  "api_keys": {
+    "type": "list",
+    "title": "API Keys",
+    "description": "多个 Google API Key，自动轮换",
+    "default": []
   },
-  "required": ["api_keys"],
-  "additionalProperties": false
+  "api_key": {
+    "type": "string",
+    "title": "API Key（单个，兼容项）",
+    "description": "有 api_keys 时忽略"
+  },
+  "api_base": {
+    "type": "string",
+    "title": "API Base",
+    "description": "默认 https://generativelanguage.googleapis.com",
+    "default": "https://generativelanguage.googleapis.com"
+  },
+  "api_version": {
+    "type": "string",
+    "title": "API Version",
+    "description": "默认 v1beta",
+    "default": "v1beta"
+  },
+  "model_name": {
+    "type": "string",
+    "title": "Model Name",
+    "description": "默认 gemini-2.5-flash-image-preview",
+    "default": "gemini-2.5-flash-image-preview"
+  },
+  "max_retries": {
+    "type": "int",
+    "title": "每个 Key 最大重试次数",
+    "default": 3
+  },
+  "cleanup_minutes": {
+    "type": "int",
+    "title": "历史图片自动清理（分钟）",
+    "default": 15
+  },
+  "delete_after_send": {
+    "type": "bool",
+    "title": "发送后删除本地文件",
+    "default": true
+  },
+  "delete_delay_seconds": {
+    "type": "int",
+    "title": "删除延迟（秒）",
+    "default": 15
+  }
 }
-
