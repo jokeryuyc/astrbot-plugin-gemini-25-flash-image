@@ -1,0 +1,6 @@
+name: gemini-25-flash-image-google
+desc: 使用 Gemini 官方 API 生成/改图，支持多 Key 轮询与重试
+version: v0.1.0
+author: You
+repo: https://generativelanguage.googleapis.com
+
